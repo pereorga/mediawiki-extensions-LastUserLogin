@@ -13,7 +13,7 @@
 	"lastuserlogin-useremail": "User email",
 	"lastuserlogin-useremailauthenticated": "Email authenticated?",
 	"lastuserlogin-lastlogin": "Last login",
-	"lastuserlogin-daysago": "Days ago",
+	"lastuserlogin-daysago": "Time ago",
 	"lastuserlogin-nousers": "No users found.",
 	"action-lastlogin": "view the last time a user logged in",
 	"right-lastlogin": "View the last time a user logged in"

@@ -109,7 +109,16 @@ class SpecialLastUserLogin extends SpecialPage {
 				if ( $key === 'user_touched' ) {
 					$lastLogin = $lang->timeanddate( wfTimestamp( TS_MW, $row->$key ), true );
 					$secondsAgo = time() - wfTimestamp( TS_UNIX, $row->$key );
-					$daysAgo = $lang->formatNum( round( $secondsAgo / 3600 / 24, 2 ) );
+					if ( $secondsAgo >= 86400 ) {
+						$daysAgo = $lang->formatNum( round( $secondsAgo / 86400, 2 ) ) . ' d';
+					} elseif ( $secondsAgo >= 3600 ) {
+						$hours = (int)floor( $secondsAgo / 3600 );
+						$minutes = (int)floor( ( $secondsAgo % 3600 ) / 60 );
+						$daysAgo = $lang->formatNum( $hours ) . ' h ' . $lang->formatNum( $minutes ) . ' min';
+					} else {
+						$minutes = max( 1, (int)floor( $secondsAgo / 60 ) );
+						$daysAgo = $lang->formatNum( $minutes ) . ' min';
+					}
 					$out .= '<td>' . $lastLogin . '</td>';
 					$out .= '<td style="text-align: right;">' . $daysAgo . '</td>';
 				} elseif ( $key === 'user_name' ) {
