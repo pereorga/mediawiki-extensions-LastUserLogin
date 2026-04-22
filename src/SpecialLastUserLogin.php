@@ -2,7 +2,6 @@
 
 namespace MediaWiki\Extension\LastUserLogin;
 
-use MediaWiki\Html\Html;
 use MediaWiki\MediaWikiServices;
 use MediaWiki\Title\Title;
 use SpecialPage;
@@ -61,20 +60,19 @@ class SpecialLastUserLogin extends SpecialPage {
 			'user_name' => 'lastuserlogin-userid',
 			'user_real_name' => 'lastuserlogin-username',
 			'user_email' => 'lastuserlogin-useremail',
-			'user_email_authenticated' => 'lastuserlogin-useremailauthenticated',
 			'user_touched' => 'lastuserlogin-lastlogin',
 		];
 
 		// Get order_by and validate it
-		$orderby = $request->getVal( 'order_by', 'user_name' );
+		$orderby = $request->getVal( 'order_by', 'user_touched' );
 		if ( !isset( $fields[ $orderby ] ) ) {
-			$orderby = 'user_name';
+			$orderby = 'user_touched';
 		}
 
 		// Get order_type and validate it
-		$ordertype = $request->getVal( 'order_type', 'ASC' );
-		if ( $ordertype !== 'DESC' ) {
-			$ordertype = 'ASC';
+		$ordertype = $request->getVal( 'order_type', 'DESC' );
+		if ( $ordertype !== 'ASC' ) {
+			$ordertype = 'DESC';
 		}
 
 		// Get ALL users, paginated
@@ -118,8 +116,6 @@ class SpecialLastUserLogin extends SpecialPage {
 					$userPage = Title::makeTitle( NS_USER, $row->$key );
 					$userName = $linkRenderer->makeLink( $userPage, $userPage->getText() );
 					$out .= '<td>' . $userName . '</td>';
-				} elseif ( $key === 'user_email_authenticated' ) {
-					$out .= Html::element( 'td', [], $this->msg( 'htmlform-' . ( $row->$key ? 'yes' : 'no' ) ) );
 				} else {
 					$out .= '<td>' . htmlspecialchars( $row->$key ) . '</td>';
 				}
