@@ -77,8 +77,11 @@ class SpecialLastUserLogin extends SpecialPage {
 
 		// Get ALL users, paginated
 		$dbr = MediaWikiServices::getInstance()->getDBLoadBalancer()->getConnection( DB_REPLICA );
+		$conds = [ 'user_is_temp' => 0 ];
+		$conds[] = 'user_name != ' . $dbr->addQuotes( 'Maintenance script' );
+		$conds[] = 'user_name != ' . $dbr->addQuotes( 'MediaWiki default' );
 		$result = $dbr->select(
-			'user', array_keys( $fields ), 'user_is_temp = 0', __METHOD__, [ 'ORDER BY' => $orderby . ' ' . $ordertype ]
+			'user', array_keys( $fields ), $conds, __METHOD__, [ 'ORDER BY' => $orderby . ' ' . $ordertype ]
 		);
 		if ( $result === false ) {
 			$output->addHTML( '<p>' . $this->msg( 'lastuserlogin-nousers' )->text() . '</p>' );
