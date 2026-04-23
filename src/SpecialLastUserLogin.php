@@ -58,8 +58,6 @@ class SpecialLastUserLogin extends SpecialPage {
 
 		$fields = [
 			'user_name' => 'lastuserlogin-userid',
-			'user_real_name' => 'lastuserlogin-username',
-			'user_email' => 'lastuserlogin-useremail',
 			'user_touched' => 'lastuserlogin-lastlogin',
 		];
 
