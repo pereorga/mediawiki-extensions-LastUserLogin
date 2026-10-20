@@ -2,10 +2,11 @@
 
 namespace MediaWiki\Extension\LastUserLogin;
 
-use MediaWiki\MediaWikiServices;
+use MediaWiki\Exception\UserBlockedError;
+use MediaWiki\Html\Html;
+use MediaWiki\SpecialPage\SpecialPage;
 use MediaWiki\Title\Title;
-use SpecialPage;
-use UserBlockedError;
+use Wikimedia\Rdbms\IConnectionProvider;
 
 /**
  * This program is free software; you can redistribute it and/or modify
@@ -30,8 +31,15 @@ class SpecialLastUserLogin extends SpecialPage {
 	/**
 	 * Constructor
 	 */
-	public function __construct() {
-		parent::__construct( 'LastUserLogin', 'lastlogin' );
+	public function __construct(
+		private readonly IConnectionProvider $dbProvider,
+	) {
+		parent::__construct( 'LastUserLogin' );
+	}
+
+	/** @inheritDoc */
+	public function getRestriction(): string {
+		return 'lastlogin';
 	}
 
 	/**
@@ -45,13 +53,13 @@ class SpecialLastUserLogin extends SpecialPage {
 		$output = $this->getOutput();
 		$lang = $this->getLanguage();
 
-		if ( $user->getBlock() ) {
-			throw new UserBlockedError( $user->getBlock() );
+		$block = $user->getBlock();
+		if ( $block ) {
+			throw new UserBlockedError( $block );
 		}
 
 		if ( !$this->userCanExecute( $user ) ) {
 			$this->displayRestrictionError();
-			return;
 		}
 
 		$this->setHeaders();
@@ -62,27 +70,28 @@ class SpecialLastUserLogin extends SpecialPage {
 		];
 
 		// Get order_by and validate it
-		$orderby = $request->getVal( 'order_by', 'user_touched' );
+		$orderby = $request->getRawVal( 'order_by' ) ?? 'user_touched';
 		if ( !isset( $fields[ $orderby ] ) ) {
 			$orderby = 'user_touched';
 		}
 
 		// Get order_type and validate it
-		$ordertype = $request->getVal( 'order_type', 'DESC' );
+		$ordertype = $request->getRawVal( 'order_type' );
 		if ( $ordertype !== 'ASC' ) {
 			$ordertype = 'DESC';
 		}
 
 		// Get ALL users, paginated
-		$dbr = MediaWikiServices::getInstance()->getDBLoadBalancer()->getConnection( DB_REPLICA );
+		$dbr = $this->dbProvider->getReplicaDatabase();
 		$conds = [ 'user_is_temp' => 0 ];
 		$conds[] = 'user_name != ' . $dbr->addQuotes( 'Maintenance script' );
 		$conds[] = 'user_name != ' . $dbr->addQuotes( 'MediaWiki default' );
 		$result = $dbr->select(
+			// @phan-suppress-next-line SecurityCheck-SQLInjection The $orderby is validated above
 			'user', array_keys( $fields ), $conds, __METHOD__, [ 'ORDER BY' => $orderby . ' ' . $ordertype ]
 		);
 		if ( $result === false ) {
-			$output->addHTML( '<p>' . $this->msg( 'lastuserlogin-nousers' )->text() . '</p>' );
+			$output->addHTML( Html::element( 'p', [], $this->msg( 'lastuserlogin-nousers' )->text() ) );
 			return;
 		}
 
@@ -93,14 +102,14 @@ class SpecialLastUserLogin extends SpecialPage {
 		$title = $this->getPageTitle();
 		$out .= '<tr>';
 		// Invert the order.
-		$ordertype = ( $ordertype == 'ASC' ) ? 'DESC' : 'ASC';
+		$ordertype = ( $ordertype === 'ASC' ) ? 'DESC' : 'ASC';
 		$linkRenderer = $this->getLinkRenderer();
 		foreach ( $fields as $key => $value ) {
 			$attrs = [ 'order_by' => $key, 'order_type' => $ordertype ];
 			$link = $linkRenderer->makeLink( $title, $this->msg( $value )->text(), [], $attrs );
 			$out .= '<th>' . $link . '</th>';
 		}
-		$out .= '<th>' . $this->msg( 'lastuserlogin-daysago' )->text() . '</th>';
+		$out .= Html::element( 'th', [], $this->msg( 'lastuserlogin-daysago' )->text() );
 		$out .= '</tr>';
 
 		// Build the table rows
@@ -109,7 +118,7 @@ class SpecialLastUserLogin extends SpecialPage {
 			foreach ( $fields as $key => $value ) {
 				if ( $key === 'user_touched' ) {
 					$lastLogin = $lang->timeanddate( wfTimestamp( TS_MW, $row->$key ), true );
-					$secondsAgo = time() - wfTimestamp( TS_UNIX, $row->$key );
+					$secondsAgo = time() - (int)wfTimestamp( TS_UNIX, $row->$key );
 					if ( $secondsAgo >= 86400 ) {
 						$daysAgo = $lang->formatNum( round( $secondsAgo / 86400, 2 ) ) . ' d';
 					} elseif ( $secondsAgo >= 3600 ) {
@@ -120,8 +129,11 @@ class SpecialLastUserLogin extends SpecialPage {
 						$minutes = max( 1, (int)floor( $secondsAgo / 60 ) );
 						$daysAgo = $lang->formatNum( $minutes ) . ' min';
 					}
-					$out .= '<td>' . $lastLogin . '</td>';
-					$out .= '<td style="text-align: right;">' . $daysAgo . '</td>';
+					$out .= Html::element( 'td', [], $lastLogin );
+					$out .= Html::element( 'td',
+						[ 'style' => 'text-align: right' ],
+						$daysAgo
+					);
 				} elseif ( $key === 'user_name' ) {
 					$userPage = Title::makeTitle( NS_USER, $row->$key );
 					$userName = $linkRenderer->makeLink( $userPage, $userPage->getText() );

@@ -1,6 +1,12 @@
 {
+	"name": "x-mediawiki/last-user-login",
+	"type": "mediawiki-extension",
+	"extra": {
+		"installer-name": "LastUserLogin"
+	},
 	"require-dev": {
-		"mediawiki/mediawiki-codesniffer": "50.0.0",
+		"mediawiki/mediawiki-codesniffer": "52.0.0",
+		"mediawiki/mediawiki-phan-config": "0.20.0",
 		"mediawiki/minus-x": "2.0.1",
 		"php-parallel-lint/php-console-highlighter": "1.0.0",
 		"php-parallel-lint/php-parallel-lint": "1.4.0"
@@ -15,11 +21,15 @@
 			"minus-x fix .",
 			"phpcbf"
 		],
+		"phan": "phan -d . --long-progress-bar",
 		"phpcs": "phpcs -sp --cache"
 	},
 	"config": {
 		"allow-plugins": {
 			"dealerdirect/phpcodesniffer-composer-installer": true
+		},
+		"audit": {
+			"block-insecure": false
 		}
 	}
 }
