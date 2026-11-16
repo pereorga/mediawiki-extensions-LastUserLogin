@@ -33,6 +33,7 @@ jobs:
           # Only create PR if upstream-sync has commits not in master
           if [ $(git rev-list --count master..upstream-sync) -gt 0 ]; then
             gh pr create \
+              --repo "$GITHUB_REPOSITORY" \
               --base master \
               --head upstream-sync \
               --title "chore: sync with upstream" \
