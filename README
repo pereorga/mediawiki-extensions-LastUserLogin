@@ -2,6 +2,15 @@ LastUserLogin
 =============
 LastUserLogin is a MediaWiki extension that adds a special to see the time at which each user last logged in.
 
+Fork Differences
+----------------
+This fork includes the following changes compared to upstream:
+
+* Default sorting: Sorts users by last login (`user_touched`) in descending order by default, instead of by username in ascending order.
+* Simplified columns: Hides real name, user email, and email authentication status to focus exclusively on username and last login.
+* Human-readable relative time: Displays elapsed time since last login in formatted units (`d`, `h min`, or `min`) instead of raw fractional days.
+* Filters system users: Excludes default system accounts ("MediaWiki default" and "Maintenance script") from the user listing.
+
 Installation
 ------------
 To install the extension, simply copy the files to your extensions/ directory and add the following line to your LocalSettings.php:
